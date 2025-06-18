@@ -109,18 +109,18 @@ public:
                     int chromaHeight = height / 2;
                     int chromaWidth = width / 2;
 
-                    // Create a single Mat to hold all three planes
-                    cv::Mat yuv(height + chromaHeight, width, CV_8UC1);
+                    // Calculate required YUV buffer size (I420 format)
+                    const int yuv_buffer_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 1);
+                    std::vector<uint8_t> yuv_buffer(yuv_buffer_size);
 
-                    // Copy the Y plane
-                    memcpy(yuv.data, avFrame->data[0], width * height);
+                    // Efficiently copy YUV data to a continuous buffer
+                    av_image_copy_to_buffer(yuv_buffer.data(), yuv_buffer_size,
+                                            avFrame->data, avFrame->linesize,
+                                            AV_PIX_FMT_YUV420P, width, height, 1);
 
-                    // Copy the U plane
-                    memcpy(yuv.data + width * height, avFrame->data[1], chromaWidth * chromaHeight);
-
-                    // Copy the V plane
-                    memcpy(yuv.data + width * height + chromaWidth * chromaHeight, avFrame->data[2], chromaWidth * chromaHeight);
-                    
+                    // Directly construct cv::Mat from the buffer (no additional copies)
+                    cv::Mat yuv(height + height / 2, width, CV_8UC1, yuv_buffer.data());
+                   
                     sensor_msgs::Image msg;
                     msg.header.stamp = ros::Time::now();
                     msg.header.frame_id = "camera_frame";
@@ -132,6 +132,25 @@ public:
                     msg.data.assign(yuv.datastart, yuv.dataend);
 
                     this->image_pub.publish(msg);
+
+                    // Efficient color conversion
+                    // cv::Mat rgb;
+                    // cv::cvtColor(yuv, rgb, cv::COLOR_YUV2BGR_I420);
+
+                    // // Efficient image slicing (no copies, only references)
+                    // int midPoint = width / 2;
+                    // cv::Mat frontImage = rgb(cv::Rect(midPoint, 0, midPoint, height));
+                    // cv::Mat backImage  = rgb(cv::Rect(0, 0, midPoint, height));
+
+                    // // Uncomment if rotating is necessary:
+                    // // frontImage = rotateImage(frontImage, 90);
+                    // // backImage = rotateImage(backImage, -90);
+
+                    // cv::Mat dualFisheyeImage;
+                    // cv::hconcat(frontImage, backImage, dualFisheyeImage);
+
+                    // auto dualFisheyeMsg = matToImgMsg(dualFisheyeImage, "dual_fisheye_frame");
+                    // dual_fisheye_pub_->publish(*dualFisheyeMsg);
                 }
             }
         }
