@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(insta360_ros_driver)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
 find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
   cv_bridge
@@ -19,6 +21,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(AVCODEC REQUIRED libavcodec)
 pkg_check_modules(AVFORMAT REQUIRED libavformat)
 pkg_check_modules(AVUTIL REQUIRED libavutil)
+pkg_search_module(SWSCALE REQUIRED libswscale)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -34,6 +37,7 @@ include_directories(
   ${AVCODEC_INCLUDE_DIRS}
   ${AVFORMAT_INCLUDE_DIRS}
   ${AVUTIL_INCLUDE_DIRS}
+  ${SWSCALE_INCLUDE_DIRS}
 )
 
 link_directories(
@@ -41,11 +45,22 @@ link_directories(
   ${PROJECT_SOURCE_DIR}/include
 )
 
+add_executable(decoder src/decoder.cpp)
+target_link_libraries(decoder CameraSDK  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${AVCODEC_LIBRARIES} ${AVFORMAT_LIBRARIES} ${AVUTIL_LIBRARIES} ${SWSCALE_LIBRARIES})
+
 add_executable(${PROJECT_NAME} src/main.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} CameraSDK ${AVCODEC_LIBRARIES} ${AVFORMAT_LIBRARIES} ${AVUTIL_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
+
+
+add_executable(equirectangular_cpp src/equirectangular.cpp)
+target_link_libraries(equirectangular_cpp ${OpenCV_LIBRARIES}  ${catkin_LIBRARIES})
+target_include_directories(equirectangular_cpp PUBLIC
+    "${PROJECT_SOURCE_DIR}/include"
+)
+
 catkin_package()
 
 catkin_python_setup()
@@ -56,7 +71,6 @@ catkin_install_python(PROGRAMS
   scripts/live_processing.py
   scripts/get_images.py
   scripts/record.py
-  src/${PROJECT_NAME}/directory_verification.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
