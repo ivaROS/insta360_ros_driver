@@ -4,9 +4,13 @@
 #include <ros/ros.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/Imu.h>
+#include <unistd.h>
 
 #include <atomic>
+#include <boost/filesystem.hpp>
+#include <iomanip>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -91,6 +95,22 @@ class CameraWrapper {
 private:
     std::shared_ptr<ins_camera::Camera> cam;
     ros::NodeHandle                     node_;
+    struct StampedImage {
+        double      timestamp;
+        std::string filename;
+
+        StampedImage() = default;
+        StampedImage(double _timestamp, const std::string& _filename)
+            : timestamp(_timestamp), filename(_filename) {}
+
+        friend std::ostream& operator<<(std::ostream&       os,
+                                        const StampedImage& s) {
+            os << std::fixed << std::setprecision(6) << s.timestamp << " "
+               << s.filename;
+            return os;
+        }
+    };
+    std::vector<StampedImage> stamps_;
 
 public:
     CameraWrapper(const ros::NodeHandle& node) : node_(node) {}
@@ -142,8 +162,91 @@ public:
             return -1;
         }
 
+        // Enable online stitching.
+        bool enable_stitching = true;
+        if (cam->EnableInCameraStitching(enable_stitching)) {
+            ROS_INFO("In-camera stitching function activated successfully!");
+        } else {
+            ROS_WARN("In-camera stitching is NOT activated!");
+        }
+
         ROS_INFO("Live streaming started.");
-        return 0;
+        // return 0;
+
+        // ROS Parameters.
+        std::string output_dir{"/tmp/insta/"};
+        if (!endsWithSlash(output_dir)) {
+            output_dir.append("/");
+        }
+        boost::filesystem::create_directories(output_dir);
+
+        // Start a loop to monitor image capturing command.
+        ros::Rate rate(1);
+        while (ros::ok()) {
+            bool ret =
+                cam->SetPhotoSubMode(ins_camera::SubPhotoMode::PHOTO_SINGLE);
+            if (!ret) {
+                ROS_ERROR("change sub mode failed!");
+                usleep(1e3);
+                continue;
+            }
+
+            ROS_INFO("Taking a picture ...");
+            double     timestamp = ros::Time::now().toSec();
+            const auto url       = cam->TakePhoto();
+            if (!url.IsSingleOrigin() || url.Empty()) {
+                ROS_ERROR("failed to take picture");
+                usleep(1e3);
+                continue;
+            }
+
+            const std::string download_url = url.GetSingleOrigin();
+            const std::string file_name    = this->getFileName(download_url);
+
+            std::string save_path = output_dir + file_name;
+            ret = cam->DownloadCameraFile(download_url, save_path);
+            if (ret) {
+                ROS_INFO_STREAM("Download " << download_url << " succeed!!!");
+                ROS_INFO_STREAM("Image saved to: " << save_path);
+                stamps_.emplace_back(timestamp, file_name);
+            } else {
+                ROS_ERROR_STREAM("Download " << download_url << " failed!!!");
+            }
+            ros::spinOnce();
+            rate.sleep();
+        }
+
+        // Save Stamps
+        {
+            std::string   filename{output_dir + "/insta_stamps.txt"};
+            std::ofstream myfile(filename);
+            if (myfile.is_open()) {
+                for (const auto& s : stamps_) {
+                    myfile << s << "\n";
+                }
+                myfile.close();
+            }
+        }
+
+        return 1;
+    }
+
+private:
+    std::string getFileName(const std::string& path) {
+        std::smatch sm;
+        std::string dir, name;
+        std::regex_match(path, sm, std::regex("(.+?)([^\\/\\\\]+$)"));
+        if (sm.size() <= 2) {
+            return path;
+        }
+        return sm[2].str();
+    }
+
+    bool endsWithSlash(const std::string& path) {
+        if (path.empty()) {
+            return false;
+        }
+        return path.back() == '/' || path.back() == '\\';
     }
 };
 
@@ -155,7 +258,7 @@ int main(int argc, char* argv[]) {
         ros::shutdown();
         return -1;
     }
-    ros::spin();
+    // ros::spin();
     ros::shutdown();
     return 0;
 }

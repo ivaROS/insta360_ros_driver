@@ -3,14 +3,15 @@
 <launch>
 
 
-    <arg name="equirectangular" default="true"/>
+    <arg name="equirectangular" default="false"/>
+    <arg name="decoder" default="true"/>
     <arg name="imu_filter" default="false"/>
     <!-- <arg name="equirectangular_config" default="$(find-pkg-share insta360_ros_driver)/config/equirectangular.yaml"/> -->
     <!-- <arg name="imu_config" default="$(find-pkg-share insta360_ros_driver)/config/imu_filter.yaml"/> -->
 
     <node pkg="insta360_ros_driver" type="insta360_ros_driver" name="insta360_ros_driver" output="screen"/>
 
-    <node pkg="insta360_ros_driver" type="decoder" name="image_decoder" output="screen"/>
+    <node if="$(arg decoder)" pkg="insta360_ros_driver" type="decoder" name="image_decoder" output="screen"/>
 
     <!-- Creates Equirectangular Images -->
     <node if="$(arg equirectangular)" pkg="insta360_ros_driver" type="equirectangular_cpp" name="equirectangular_node" output="screen">
