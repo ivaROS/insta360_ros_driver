@@ -61,6 +61,12 @@ target_include_directories(equirectangular_cpp PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
 
+add_executable(online_capturer src/online_capturer.cpp)
+target_link_libraries(online_capturer ${catkin_LIBRARIES} ${OpenCV_LIBS} CameraSDK ${AVCODEC_LIBRARIES} ${AVFORMAT_LIBRARIES} ${AVUTIL_LIBRARIES})
+target_include_directories(online_capturer PUBLIC
+    "${PROJECT_SOURCE_DIR}/include"
+)
+
 catkin_package()
 
 catkin_python_setup()

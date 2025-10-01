@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="output_dir"           default="/tmp/insta/" />
+    <arg name="enable_service"       default="false"/>
+    <arg name="enable_pose_checker"  default="true" />
+    <arg name="enable_timer"         default="true"/>
+    <arg name="time_thresh"          default="10.0"/>
+    <arg name="trans_thresh"         default="2.0"/>
+
+    <node pkg="insta360_ros_driver" type="online_capturer" name="online_capturer" output="screen">
+        <param name="enable_service"      value="$(arg enable_service)" />
+        <param name="enable_pose_checker" value="$(arg enable_pose_checker)"/>
+        <param name="enable_timer"        value="$(arg enable_timer)" />
+        <param name="time_thresh"         value="$(arg time_thresh)"/>
+        <param name="trans_thresh"        value="$(arg trans_thresh)"/>
+    </node>
+</launch>
