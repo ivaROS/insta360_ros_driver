@@ -131,12 +131,11 @@ public:
                 }
                 myfile.close();
             }
-            ROS_INFO("Images with timestamps have been saved to %s .",
-                     output_dir_);
+            std::cout << "Images with timestamps have been saved to: " << output_dir_ << std::endl;
         }
         if (cam_) {
             cam_->Close();
-            ROS_INFO("Camera has been closed.");
+            std::cout << "Camera has been closed." << std::endl;
         }
     }
 
@@ -230,6 +229,7 @@ public:
         }
 
         output_dir_ += getCurrentTimeAsDirectoryString();
+        output_dir_.append("/");
         boost::filesystem::create_directories(output_dir_);
     }
 
@@ -385,8 +385,5 @@ int main(int argc, char* argv[]) {
     }
     camera.InitRos();
     camera.run();
-    ros::spin();
-    ros::shutdown();
-    ROS_INFO("Done");
     return 0;
 }
