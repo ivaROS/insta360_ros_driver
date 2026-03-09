@@ -249,13 +249,17 @@ public:
                           (cur_ty - last_pose_.ty) * (cur_ty - last_pose_.ty);
             if (dist2 > trans_thresh_ * trans_thresh_) {
                 capture();
+                last_pose_.tx = cur_tx;
+                last_pose_.ty = cur_ty;
+                last_pose_.timestamp = msg->header.stamp.toSec();
             }
-        }
+        } else {
 
         // thread safe.
         last_pose_.timestamp = msg->header.stamp.toSec();
         last_pose_.tx        = msg->pose.pose.position.x;
         last_pose_.ty        = msg->pose.pose.position.y;
+        }
     }
 
     bool captureRequest(std_srvs::Trigger::Request&  req,

@@ -5,6 +5,7 @@ include/*
 .vscode
 *.pyc
 
+*CameraSDK*
 !bag/raw/.gitkeep
 !bag/compressed/.gitkeep
 !bag/undistorted/.gitkeep

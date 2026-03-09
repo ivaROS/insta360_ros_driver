@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-    <arg name="output_dir"           default="/tmp/insta/" />
+    <arg name="output_dir"           default="/home/roboslam/slam_ws/data/insta/"/>
     <arg name="enable_service"       default="false"/>
     <arg name="enable_pose_checker"  default="true" />
     <arg name="enable_timer"         default="true"/>
@@ -14,5 +14,6 @@
         <param name="enable_timer"        value="$(arg enable_timer)" />
         <param name="time_thresh"         value="$(arg time_thresh)"/>
         <param name="trans_thresh"        value="$(arg trans_thresh)"/>
+        <param name="output_dir"          value="$(arg output_dir)"/>
     </node>
 </launch>
