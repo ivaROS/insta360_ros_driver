@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-    <arg name="output_dir"           default="/home/roboslam/slam_ws/data/insta/"/>
+    <arg name="output_dir"           default="/home/roboslam/slam_ws/data/photosphere/"/>
     <arg name="enable_service"       default="false"/>
     <arg name="enable_pose_checker"  default="true" />
     <arg name="enable_timer"         default="true"/>
